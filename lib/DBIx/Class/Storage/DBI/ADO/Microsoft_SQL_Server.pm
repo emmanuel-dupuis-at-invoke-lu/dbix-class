@@ -423,6 +423,7 @@ sub _mssql_max_data_type_representation_size_in_units {
   sub datatype_to_ado {
     my ($self, $sqlt_datatype) = @_;
     # https://www.w3schools.com/asp/ado_datatypes.asp
+    # also see: https://docs.microsoft.com/en-us/sql/ado/reference/ado-api/datatypeenum
     my $ado_type = {
     # 'XXXXX'          => 'adArray',
     # 'XXXXX'          => 'adBSTR',
@@ -442,32 +443,32 @@ sub _mssql_max_data_type_representation_size_in_units {
     # 'smalldatetime'  => '????',
       'time'           => 'adDBTime',
       'timestamp'      => 'adDBTimeStamp',
-      'decimal'        => 'adDecimal',
+      'decimal'        => 'adNumeric',
     # 'XXXXX'          => 'adDouble',
     # 'XXXXX'          => 'adEmpty',
     # 'XXXXX'          => 'adError',
     # 'XXXXX'          => 'adFileTime',
-    # 'XXXXX'          => 'adGUID',
+    # 'uniqueidentifier' => 'adGUID',
     # 'XXXXX'          => 'adIDispatch',
     # 'XXXXX'          => 'adIUnknown',
       'int'            => 'adInteger',
       'integer'        => 'adInteger',
     # 'XXXXX'          => 'adLongVarBinary',
     # 'XXXXX'          => 'adLongVarChar',
-    # 'XXXXX'          => 'adLongVarWChar',
+    # 'ntext'          => 'adLongVarWChar',
       'numeric'        => 'adNumeric',
     # 'XXXXX'          => 'adPropVariant',
     # 'XXXXX'          => 'adSingle',
       'smallint'       => 'adSmallInt',
-      'tinyint'        => 'adTinyInt',
+      'tinyint'        => 'adUnsignedTinyInt',
     # 'XXXXX'          => 'adUnsignedBigInt',
     # 'XXXXX'          => 'adUnsignedInt',
     # 'XXXXX'          => 'adUnsignedSmallInt',
-    # 'XXXXX'          => 'adUnsignedTinyInt',
+    # 'XXXXX'          => 'adTinyInt',
     # 'XXXXX'          => 'adUserDefined',
       'varbinary'      => 'adVarBinary',
       'varchar'        => 'adVarChar',
-      'float'          => 'adSingle',
+      'float'          => 'adDouble',
       'real'           => 'adVarNumeric',
       'nvarchar'       => 'adVarWChar',
       'variant'        => 'adVariant',
@@ -485,7 +486,27 @@ sub _mssql_max_data_type_representation_size_in_units {
 
 sub _bind_sth_params_specificities {
   my ($self, $sqlt_datatype) = @_;
-  return ($sqlt_datatype =~ /int|real|numeric|float|decimal/) ? 4 : 202;
+  return ($sqlt_datatype =~ /bigint/) ? 20 # adBigInt
+         : ($sqlt_datatype =~ /binary|timestamp/) ? 128 # adBinary
+         : ($sqlt_datatype =~ /bit/) ? 11 # adBoolean
+         : ($sqlt_datatype =~ /char/) ? 129 # adChar
+         : ($sqlt_datatype =~ /money/) ? 6 # adCurrency
+         : ($sqlt_datatype =~ /datetime2/) ? 202 # problem with default format for adDBTimeStamp being 'mm/dd/yyyy hh:mi:ss.fff'
+         : ($sqlt_datatype =~ /datetime/) ? 135 # adDBTimeStamp
+         : ($sqlt_datatype =~ /date/) ? 133 # adDBDate
+         : ($sqlt_datatype =~ /uniqueidentifier/) ? 72 # adGUID
+         : ($sqlt_datatype =~ /smallint/) ? 2 # adSmallInt
+         : ($sqlt_datatype =~ /tinyint/) ? 17 # adUnsignedTinyInt
+         : ($sqlt_datatype =~ /int/) ? 3 # adInteger
+         : ($sqlt_datatype =~ /numeric|decimal/) ? 131 # adNumeric
+         : ($sqlt_datatype =~ /nvarchar/) ? 202 # adVarWChar
+         : ($sqlt_datatype =~ /real/) ? 4 # adSingle
+         : ($sqlt_datatype =~ /float/) ? 5 # adDouble
+         : ($sqlt_datatype =~ /nchar/) ? 130 # adWChar
+         : ($sqlt_datatype =~ /ntext/) ? 203 # adLongVarWChar
+         : ($sqlt_datatype =~ /time/) ? 134 # adDBTime TODO: see if we could use adDBTimeStamp to save the frations of seconds
+         : ($sqlt_datatype =~ /varbinary/) ? 204 # adVarBinary
+         : 202; # adVarWChar
 }
 
 package # hide from PAUSE
