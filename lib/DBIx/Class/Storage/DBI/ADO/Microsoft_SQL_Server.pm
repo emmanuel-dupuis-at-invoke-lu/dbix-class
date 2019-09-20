@@ -488,6 +488,7 @@ sub _mssql_max_data_type_representation_size_in_units {
 
 sub _bind_sth_params_specificities {
   my ($self, $sqlt_datatype) = @_;
+  return 0 if !defined $sqlt_datatype; # adEmpty
   state $ado_type_cache = {};
   return $ado_type_cache->{$sqlt_datatype}
       //=  ($sqlt_datatype =~ /bigint/) ? 20 # adBigInt
@@ -510,7 +511,7 @@ sub _bind_sth_params_specificities {
          : ($sqlt_datatype =~ /ntext/) ? 203 # adLongVarWChar
          : ($sqlt_datatype =~ /varbinary/) ? 204 # adVarBinary
          : ($sqlt_datatype =~ /binary|timestamp/) ? 128 # adBinary
-         : ($sqlt_datatype =~ /time/) ? 134 # adDBTime TODO: see if we could use adDBTimeStamp to save the frations of seconds
+         : ($sqlt_datatype =~ /time/) ? 134 # adDBTime TODO: see if we could use adDBTimeStamp to save the fractions of seconds
          : 202; # adVarWChar
 }
 
